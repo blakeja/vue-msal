@@ -14,7 +14,9 @@ import {
   MSALBasic,
   GraphEndpoints,
   GraphDetailedObject,
-  CategorizedGraphRequests
+  CategorizedGraphRequests,
+  EndpointRequest,
+  EndpointResponse
 } from './types';
 
 export class MSAL implements MSALBasic {
@@ -113,25 +115,26 @@ export class MSAL implements MSALBasic {
     this.getStoredCustomData();
   }
 
-  signIn() {
+  signIn(): void {
     if (!this.lib.isCallback(window.location.hash) && !this.lib.getAccount()) {
       // request can be used for login or token request, however in more complex situations this can have diverging options
       this.lib.loginRedirect(this.request);
     }
   }
 
-  async signOut() {
+  async signOut(): Promise<void> {
     if (this.options.auth.beforeSignOut) {
       await this.options.auth.beforeSignOut(this);
     }
+
     this.lib.logout();
   }
 
-  isAuthenticated() {
+  isAuthenticated(): boolean {
     return !this.lib.isCallback(window.location.hash) && !!this.lib.getAccount();
   }
 
-  async acquireToken(request = this.request, cacheToken = true) {
+  async acquireToken(request = this.request, cacheToken = true): Promise<string | boolean> {
     try {
       //Always start with acquireTokenSilent to obtain a token in the signed in user from cache
       const response = await this.lib.acquireTokenSilent(request);
@@ -155,7 +158,7 @@ export class MSAL implements MSALBasic {
     }
   }
 
-  private setAccessToken(accessToken: string, expiresOn: Date, scopes: string[]) {
+  private setAccessToken(accessToken: string, expiresOn: Date, scopes: string[]): void {
     this.data.accessToken = accessToken;
     const expirationOffset = this.lib.config.system.tokenRenewalOffsetSeconds * 1000;
     const expiration = expiresOn.getTime() - (new Date()).getTime() - expirationOffset;
@@ -173,17 +176,18 @@ export class MSAL implements MSALBasic {
     }, expiration)
   }
 
-  private requiresInteraction(errorCode: string) {
+  private requiresInteraction(errorCode: string): boolean {
     if (!errorCode || !errorCode.length) {
       return false;
     }
+
     return errorCode === "consent_required" ||
       errorCode === "interaction_required" ||
       errorCode === "login_required";
   }
 
   // MS GRAPH
-  async initialMSGraphCall() {
+  async initialMSGraphCall(): Promise<void> {
     const {onResponse: callback} = this.graph;
     let initEndpoints = this.graph.endpoints;
 
@@ -249,7 +253,7 @@ export class MSAL implements MSALBasic {
     }
   }
 
-  async msGraph(endpoints: GraphEndpoints, batchUrl: string | undefined = undefined) {
+  async msGraph(endpoints: GraphEndpoints, batchUrl: string | undefined = undefined): Promise<any> {
     try {
       if (Array.isArray(endpoints)) {
         return await this.executeBatchRequest(endpoints, batchUrl);
@@ -261,8 +265,8 @@ export class MSAL implements MSALBasic {
     }
   }
 
-  private async executeBatchRequest(endpoints: Array<string | GraphDetailedObject>, batchUrl = this.graph.baseUrl) {
-    const requests = endpoints.map((endpoint, index) => this.createRequest(endpoint, index));
+  private async executeBatchRequest(endpoints: Array<string | GraphDetailedObject>, batchUrl = this.graph.baseUrl): Promise<any> {
+    const requests: EndpointRequest[] = endpoints.map((endpoint, index) => this.createRequest(endpoint, index));
 
     const {data} = await axios.request({
       url: `${batchUrl}/$batch`,
@@ -273,6 +277,7 @@ export class MSAL implements MSALBasic {
     });
 
     let result = {};
+
     data.responses.map(response => {
       let key = response.id;
       delete response.id;
@@ -297,8 +302,8 @@ export class MSAL implements MSALBasic {
     return result;
   }
 
-  private async executeSingleRequest(endpoint: string | GraphDetailedObject) {
-    const request = this.createRequest(endpoint);
+  private async executeSingleRequest(endpoint: string | GraphDetailedObject): Promise<EndpointResponse> {
+    const request: EndpointRequest = this.createRequest(endpoint);
 
     if (request.url.search('http') !== 0) {
       request.url = this.graph.baseUrl + request.url;
@@ -318,8 +323,8 @@ export class MSAL implements MSALBasic {
     }
   }
 
-  private createRequest(endpoint: string | GraphDetailedObject, index = 0) {
-    const request = {
+  private createRequest(endpoint: string | GraphDetailedObject, index = 0): EndpointRequest {
+    const request: EndpointRequest = {
       url: '',
       method: 'GET',
       id: `defaultID-${index}`
@@ -363,6 +368,7 @@ export class MSAL implements MSALBasic {
         }
       }
     }
+
     return res;
   }
   
@@ -379,7 +385,7 @@ export class MSAL implements MSALBasic {
   }
 
   // CUSTOM DATA
-  saveCustomData(key: string, data: any) {
+  saveCustomData(key: string, data: any): void {
     if (!this.data.custom.hasOwnProperty(key)) {
       this.data.custom[key] = null;
     }
@@ -388,7 +394,7 @@ export class MSAL implements MSALBasic {
     this.storeCustomData();
   }
 
-  private storeCustomData() {
+  private storeCustomData(): void {
     if (!_.isEmpty(this.data.custom)) {
       this.lib.store.setItem('msal.custom', JSON.stringify(this.data.custom));
     } else {
@@ -396,18 +402,19 @@ export class MSAL implements MSALBasic {
     }
   }
 
-  private getStoredCustomData() {
+  private getStoredCustomData(): void {
     let customData = {};
     const customDataStr = this.lib.store.getItem('msal.custom');
 
     if (customDataStr) {
       customData = JSON.parse(customDataStr);
     }
+
     this.data.custom = customData;
   }
 
   // CALLBACKS
-  private saveCallback(callbackPath: string, ...args: any[]) {
+  private saveCallback(callbackPath: string, ...args: any[]): void {
     if (_.get(this.options, callbackPath)) {
       const callbackQueueObject: CallbackQueueObject = {
         id: _.uniqueId(`cb-${callbackPath}`),
@@ -421,7 +428,7 @@ export class MSAL implements MSALBasic {
     }
   }
 
-  private getSavedCallbacks() {
+  private getSavedCallbacks(): void {
     const callbackQueueStr = this.lib.store.getItem('msal.callbackqueue');
 
     if (callbackQueueStr) {
@@ -429,7 +436,7 @@ export class MSAL implements MSALBasic {
     }
   }
 
-  private async executeCallbacks(callbacksToExec: CallbackQueueObject[] = this.callbackQueue) {
+  private async executeCallbacks(callbacksToExec: CallbackQueueObject[] = this.callbackQueue): Promise<void> {
     if (callbacksToExec.length) {
       for (let i in callbacksToExec) {
         const cb = callbacksToExec[i];
@@ -450,7 +457,7 @@ export class MSAL implements MSALBasic {
     }
   }
 
-  private storeCallbackQueue() {
+  private storeCallbackQueue(): void {
     if (this.callbackQueue.length) {
       this.lib.store.setItem('msal.callbackqueue', JSON.stringify(this.callbackQueue));
     } else {

@@ -80,3 +80,15 @@ export interface MSALBasic {
 }
 
 export type CategorizedGraphRequests = { singleRequests: GraphDetailedObject[], batchRequests: { [id:string]: GraphDetailedObject[] } }
+
+export type EndpointRequest = {
+  url: string,
+  method: string,
+  id: string
+}
+
+export type EndpointResponse = {
+  status: any,
+  headers: any,
+  body: any
+}
