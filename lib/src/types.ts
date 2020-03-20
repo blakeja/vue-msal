@@ -74,12 +74,12 @@ export interface MSALBasic {
   signIn: () => void,
   signOut: () => Promise<any> | void,
   isAuthenticated: () => boolean,
-  acquireToken: (request: Request, cacheToken: boolean) => Promise<string | boolean>,
-  msGraph: (endpoints:  GraphEndpoints, batchUrl: string | undefined) => Promise<object>,
+  acquireToken: (request: Request, disableTokenCache?: boolean) => Promise<string | boolean>,
+  msGraph: (endpoints: GraphEndpoints, batchUrl: string | undefined) => Promise<object>,
   saveCustomData: (key: string, data: any) => void
 }
 
-export type CategorizedGraphRequests = { singleRequests: GraphDetailedObject[], batchRequests: { [id:string]: GraphDetailedObject[] } }
+export type CategorizedGraphRequests = { singleRequests: GraphDetailedObject[], batchRequests: { [id: string]: GraphDetailedObject[] } }
 
 export type EndpointRequest = {
   url: string,

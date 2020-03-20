@@ -139,12 +139,12 @@ export class MSAL implements MSALBasic {
     return !this.lib.isCallback(window.location.hash) && !!this.lib.getAccount();
   }
 
-  async acquireToken(request = this.request, cacheToken = true): Promise<string | boolean> {
+  async acquireToken(request = this.request, disableTokenCache?: boolean): Promise<string | boolean> {
     try {
       //Always start with acquireTokenSilent to obtain a token in the signed in user from cache
       const response = await this.lib.acquireTokenSilent(request);
 
-      if (cacheToken && this.data.accessToken !== response.accessToken) {
+      if (disableTokenCache === undefined && !disableTokenCache && this.data.accessToken !== response.accessToken) {
         this.setAccessToken(response.accessToken, response.expiresOn, response.scopes);
         this.saveCallback('auth.onToken', null, response);
       }
@@ -155,7 +155,7 @@ export class MSAL implements MSALBasic {
       // Call acquireTokenRedirect
       if (this.requiresInteraction(error.errorCode)) {
         this.lib.acquireTokenRedirect(request); //acquireTokenPopup
-      } else {
+      } else if (disableTokenCache === undefined && !disableTokenCache) {
         this.saveCallback('auth.onToken', error, null);
       }
 
