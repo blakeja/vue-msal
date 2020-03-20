@@ -74,7 +74,7 @@ export interface MSALBasic {
   signIn: () => void,
   signOut: () => Promise<any> | void,
   isAuthenticated: () => boolean,
-  acquireToken: (request: Request) => Promise<string | boolean>,
+  acquireToken: (request: Request, cacheToken: boolean) => Promise<string | boolean>,
   msGraph: (endpoints:  GraphEndpoints, batchUrl: string | undefined) => Promise<object>,
   saveCustomData: (key: string, data: any) => void
 }
