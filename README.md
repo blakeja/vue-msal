@@ -87,7 +87,9 @@ new Vue({
 * `acquireToken()`: Acquire an access token manually.
 > :grey_exclamation: *Note: This will also run automatically after the user's successful authentication using the default permissions defined in the `auth.scopes` property of the configuration options. You should however run this manually in case you want to get an access token with more permissions than the default, by adding the new request options as an argument, like this<br>
 >`acquireToken({scopes: ["user.read", "another.permission"]})` <br>
->Check the [Request Configuration Options](#request-options) below for more details*
+>Check the [Request Configuration Options](#request-options) below for more details* <br>
+> :grey_exclamation: *Note: If requesting an additional access token for an API other than MS Graph, use the optional disableTokenCache argument.  This maintains the integrity of the cached MS Graph access token while still returning the requested access token. Example: <br>
+>`acquireToken({scopes: ["api://cf5774e9-6d41-4ed2-944c-69b91bcf83cc/user_impersonation"]}, true)` <br>
 * `msGraph(endpoints[,batchUrl])`: Manually call the MS Graph API using the acquired access token.
 > :grey_exclamation: *Note: Read the [Calling MS Graph](#calling-ms-graph) section for more details*
 * `saveCustomData(key, data)`: You can use this function to add custom data to the selected cache location (set with `cache.cacheLocation` in  the [configuration options](#cache-options)), that will be automatically deleted when the user signs out or his access token expires. This should be used, for example, to store any user related data fetched from another API.
