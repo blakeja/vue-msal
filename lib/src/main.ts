@@ -1,6 +1,6 @@
 import _ from "lodash";
-import {default as axios, AxiosResponse, Method} from "axios";
-import {UserAgentApplicationExtended} from "./UserAgentApplicationExtended";
+import { default as axios, Method } from "axios";
+import { UserAgentApplicationExtended } from "./UserAgentApplicationExtended";
 import {
   Auth,
   Request,
@@ -20,6 +20,7 @@ import {
 } from './types';
 
 export class MSAL implements MSALBasic {
+  // eslint-disable-next-line
   private lib: any;
 
   private tokenExpirationTimer: undefined | number = undefined;
@@ -44,9 +45,12 @@ export class MSAL implements MSALBasic {
     navigateToLoginRequestUrl: true,
     requireAuthOnInitialize: false,
     autoRefreshToken: true,
-    onAuthentication: (error, response) => {},
-    onToken: (error, response) => {},
-    beforeSignOut: () => {}
+    // eslint-disable-next-line
+    onAuthentication: (error, response) => { },
+    // eslint-disable-next-line
+    onToken: (error, response) => { },
+    // eslint-disable-next-line
+    beforeSignOut: () => { }
   };
 
   private readonly cache: CacheOptions = {
@@ -60,9 +64,10 @@ export class MSAL implements MSALBasic {
 
   private readonly graph: Graph = {
     callAfterInit: false,
-    endpoints: {profile: '/me'},
+    endpoints: { profile: '/me' },
     baseUrl: 'https://graph.microsoft.com/v1.0',
-    onResponse: (response) => {}
+    // eslint-disable-next-line
+    onResponse: (response) => { }
   };
 
   constructor(private readonly options: Options) {
@@ -163,7 +168,7 @@ export class MSAL implements MSALBasic {
     const expirationOffset = this.lib.config.system.tokenRenewalOffsetSeconds * 1000;
     const expiration = expiresOn.getTime() - (new Date()).getTime() - expirationOffset;
 
-    if (this.tokenExpirationTimer) { 
+    if (this.tokenExpirationTimer) {
       clearTimeout(this.tokenExpirationTimer);
     }
 
@@ -188,15 +193,15 @@ export class MSAL implements MSALBasic {
 
   // MS GRAPH
   async initialMSGraphCall(): Promise<void> {
-    const {onResponse: callback} = this.graph;
-    let initEndpoints = this.graph.endpoints;
+    const { onResponse: callback } = this.graph;
+    const initEndpoints = this.graph.endpoints;
 
     if (typeof initEndpoints === 'object' && !_.isEmpty(initEndpoints)) {
       const resultsObj = {};
       const forcedIds: string[] = [];
 
       try {
-        const endpoints: { [id: string]: GraphDetailedObject & { force?: Boolean } } = {};
+        const endpoints: { [id: string]: GraphDetailedObject & { force?: boolean } } = {};
 
         for (const id in initEndpoints) {
           endpoints[id] = this.getEndpointObject(initEndpoints[id]);
@@ -215,7 +220,7 @@ export class MSAL implements MSALBasic {
           Object.assign(resultsObj, storedData);
         }
 
-        const {singleRequests, batchRequests} = this.categorizeRequests(endpoints, _.difference(storedIds, forcedIds));
+        const { singleRequests, batchRequests } = this.categorizeRequests(endpoints, _.difference(storedIds, forcedIds));
 
         const singlePromises = singleRequests.map(async endpoint => {
           const res = {};
@@ -236,8 +241,8 @@ export class MSAL implements MSALBasic {
 
           Object.assign(resultsObj, res);
         });
-        
-        const resultsToSave = {...resultsObj};
+
+        const resultsToSave = { ...resultsObj };
         forcedIds.map(id => delete resultsToSave[id]);
 
         this.lib.store.setItem(`msal.msgraph-${this.data.accessToken}`, JSON.stringify(resultsToSave));
@@ -254,32 +259,28 @@ export class MSAL implements MSALBasic {
   }
 
   async msGraph(endpoints: GraphEndpoints, batchUrl: string | undefined = undefined): Promise<any> {
-    try {
-      if (Array.isArray(endpoints)) {
-        return await this.executeBatchRequest(endpoints, batchUrl);
-      } else {
-        return await this.executeSingleRequest(endpoints);
-      }
-    } catch (error) {
-      throw error;
+    if (Array.isArray(endpoints)) {
+      return await this.executeBatchRequest(endpoints, batchUrl);
+    } else {
+      return await this.executeSingleRequest(endpoints);
     }
   }
 
   private async executeBatchRequest(endpoints: Array<string | GraphDetailedObject>, batchUrl = this.graph.baseUrl): Promise<any> {
     const requests: EndpointRequest[] = endpoints.map((endpoint, index) => this.createRequest(endpoint, index));
 
-    const {data} = await axios.request({
+    const { data } = await axios.request({
       url: `${batchUrl}/$batch`,
       method: 'POST' as Method,
-      data: {requests: requests},
-      headers: {Authorization: `Bearer ${this.data.accessToken}`},
+      data: { requests: requests },
+      headers: { Authorization: `Bearer ${this.data.accessToken}` },
       responseType: 'json'
     });
 
     let result = {};
 
     data.responses.map(response => {
-      let key = response.id;
+      const key = response.id;
       delete response.id;
       return result[key] = response
     });
@@ -313,7 +314,7 @@ export class MSAL implements MSALBasic {
       url: request.url,
       method: request.method as Method,
       responseType: 'json',
-      headers: {Authorization: `Bearer ${this.data.accessToken}`}
+      headers: { Authorization: `Bearer ${this.data.accessToken}` }
     }));
 
     return {
@@ -335,14 +336,14 @@ export class MSAL implements MSALBasic {
     if (endpoint.url) {
       Object.assign(request, endpoint);
     } else {
-      throw ({error: 'invalid endpoint', endpoint: endpoint});
+      throw ({ error: 'invalid endpoint', endpoint: endpoint });
     }
 
     return request;
   }
 
-  private categorizeRequests(endpoints: { [id:string]: GraphDetailedObject & { batchUrl?: string } }, excludeIds: string[]): CategorizedGraphRequests {
-    let res: CategorizedGraphRequests = {
+  private categorizeRequests(endpoints: { [id: string]: GraphDetailedObject & { batchUrl?: string } }, excludeIds: string[]): CategorizedGraphRequests {
+    const res: CategorizedGraphRequests = {
       singleRequests: [],
       batchRequests: {}
     };
@@ -355,9 +356,10 @@ export class MSAL implements MSALBasic {
 
       if (!_.includes(excludeIds, key)) {
         if (endpoint.batchUrl) {
-          const {batchUrl} = endpoint;
+          const { batchUrl } = endpoint;
           delete endpoint.batchUrl;
 
+          // eslint-disable-next-line
           if (!res.batchRequests.hasOwnProperty(batchUrl)) {
             res.batchRequests[batchUrl] = [];
           }
@@ -371,10 +373,10 @@ export class MSAL implements MSALBasic {
 
     return res;
   }
-  
+
   private getEndpointObject(endpoint: string | GraphDetailedObject): GraphDetailedObject {
     if (typeof endpoint === "string") {
-      endpoint = {url: endpoint}
+      endpoint = { url: endpoint }
     }
 
     if (typeof endpoint === "object" && !endpoint.url) {
@@ -386,6 +388,7 @@ export class MSAL implements MSALBasic {
 
   // CUSTOM DATA
   saveCustomData(key: string, data: any): void {
+    // eslint-disable-next-line
     if (!this.data.custom.hasOwnProperty(key)) {
       this.data.custom[key] = null;
     }
@@ -438,7 +441,7 @@ export class MSAL implements MSALBasic {
 
   private async executeCallbacks(callbacksToExec: CallbackQueueObject[] = this.callbackQueue): Promise<void> {
     if (callbacksToExec.length) {
-      for (let i in callbacksToExec) {
+      for (const i in callbacksToExec) {
         const cb = callbacksToExec[i];
         const callback = _.get(this.options, cb.callback);
 
